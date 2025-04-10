@@ -6,8 +6,8 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<LoginScreen />} />
         <Route path="/Home" element={<HomeScreen />} />
+        <Route path="/" element={<LoginScreen />} />
       </Routes>
     </Router>
   );

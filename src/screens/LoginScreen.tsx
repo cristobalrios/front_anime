@@ -1,56 +1,68 @@
 import React, { useState } from 'react';
 import { useMutation } from '@apollo/client';
 import { LOGIN_USER } from '../graphql/mutations/Login';
-import { useNavigate } from 'react-router-dom'; // Importa useNavigate
+import { useNavigate } from 'react-router-dom';
+import AuthStyles from '../styles/authStyles';
 
 const LoginScreen = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [login, { loading, error }] = useMutation(LOGIN_USER);
+  const navigate = useNavigate();
 
-    const [login, { data, loading, error }] = useMutation(LOGIN_USER);
-    const navigate = useNavigate(); // Inicializa el hook de navegación
+  const handleLogin = async () => {
+    if (!email || !password) {
+      alert('Por favor, completa todos los campos.');
+      return;
+    }
 
-    const handleLogin = async () => {
-        if (email === '' || password === '') {
-            alert('Por favor, completa todos los campos.');
-            return;
-        }
-        else if (email == "a" || password == "a") {
-            navigate('/Home'); // Redirige a Home
-        }
-        try {
-            const response = await login({ variables: { email, password } });
-            console.log('Logged in!', response.data);
+    if (email === 'a' && password === 'a') {
+      navigate('/Home');
+      return;
+    }
 
-            // Si el login es exitoso, navega a la página principal
-            if (response?.data?.tokenAuth?.token) {
-                navigate('/Home'); // Redirige a Home
-            }
-        } catch (err) {
-            console.error(err);
-        }
-    };
+    try {
+      const response = await login({ variables: { email, password } });
+      if (response?.data?.tokenAuth?.token) {
+        navigate('/Home');
+      } else {
+        alert('Credenciales incorrectas.');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
-    return (
-        <div>
-            <h1>Iniciar Sesión</h1>
-            <input
-                placeholder="Correo"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-            />
-            <input
-                placeholder="Contraseña"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-            />
-            <button onClick={handleLogin}>Entrar</button>
+  return (
+    <div style={AuthStyles.container}>
+      <div style={AuthStyles.card}>
+        <h2 style={AuthStyles.title}>🎟️ Iniciar Sesión</h2>
+        <input
+          style={AuthStyles.input}
+          type="email"
+          placeholder="Correo electrónico"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <input
+          style={AuthStyles.input}
+          type="password"
+          placeholder="Contraseña"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        <button style={AuthStyles.button} onClick={handleLogin} disabled={loading}>
+          {loading ? 'Autenticando...' : 'Entrar'}
+        </button>
 
-            {loading && <p>Autenticando...</p>}
-            {error && <p>Error: {error.message}</p>}
-        </div>
-    );
+        {error && (
+          <p style={AuthStyles.errorText}>
+            ❌ Error: {error.message.includes('Network') ? 'No se pudo conectar al servidor.' : error.message}
+          </p>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default LoginScreen;
