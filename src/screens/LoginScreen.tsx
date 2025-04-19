@@ -10,31 +10,31 @@ const LoginScreen = () => {
   const [login, { loading, error }] = useMutation(LOGIN_USER);
   const navigate = useNavigate();
 
-  const handleLogin = async () => {
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!email || !password) {
       alert('Por favor, completa todos los campos.');
       return;
     }
-
-    if (email === 'a' && password === 'a') {
-      navigate('/Home');
-      return;
-    }
-
+    console.log('Email:', email);
+    console.log('Password:', password);
     try {
       const response = await login({ variables: { email, password } });
-      if (response?.data?.tokenAuth?.token) {
+      console.log('Response:', response.data);
+      if (response?.data?.Login?.success) {
+        console.log('Token:', response.data.Login.token);
+        localStorage.setItem('token', response.data.Login.token); // Guardar el token en localStorage
         navigate('/Home');
       } else {
         alert('Credenciales incorrectas.');
       }
     } catch (err) {
-      console.error(err);
+      console.error('Login error:', err);
     }
   };
 
   return (
-    <div style={AuthStyles.container}>
+    <form onSubmit={handleLogin} style={AuthStyles.container}>
       <div style={AuthStyles.card}>
         <h2 style={AuthStyles.title}>🎟️ Iniciar Sesión</h2>
         <input
@@ -51,7 +51,7 @@ const LoginScreen = () => {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <button style={AuthStyles.button} onClick={handleLogin} disabled={loading}>
+        <button style={AuthStyles.button} type="submit" disabled={loading}>
           {loading ? 'Autenticando...' : 'Entrar'}
         </button>
 
@@ -60,8 +60,17 @@ const LoginScreen = () => {
             ❌ Error: {error.message.includes('Network') ? 'No se pudo conectar al servidor.' : error.message}
           </p>
         )}
+
+        {/* Botón para redirigir a la página de creación de cuenta */}
+        <button
+          style={{ ...AuthStyles.button, marginTop: '10px', backgroundColor: '#4CAF50' }}
+          type="button"
+          onClick={() => navigate('/CreateUser')}
+        >
+          Crear cuenta
+        </button>
       </div>
-    </div>
+    </form>
   );
 };
 

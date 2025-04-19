@@ -1,22 +1,43 @@
 import React, { useState } from 'react';
-import { useQuery } from '@apollo/client';
-import { GET_ANIME_LIST } from '../graphql/queries/getAnimeList';
+import { useLazyQuery } from '@apollo/client';
 import HomeStyles from '../styles/homeStyles';
+import { ADVANCED_SEARCH } from '../graphql/queries/BusquedaAvanzada';
+
+const genreMap = {
+  '1': 'Acción',
+  '2': 'Aventura',
+  '3': 'Comedia',
+  '4': 'Drama',
+  '5': 'Fantasía',
+};
 
 const HomeScreen = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [shouldFetch, setShouldFetch] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-  
-  const { loading, error, data } = useQuery(GET_ANIME_LIST, {
-    variables: { search: searchTerm },
-    skip: !shouldFetch
-  });
+  const [nombre, setNombre] = useState('');
+  const [tipo, setTipo] = useState('');
+  const [estado, setEstado] = useState('');
+  const [minScore, setMinScore] = useState<number | undefined>(undefined);
+  const [generos, setGeneros] = useState<string[]>([]);
+
+  const [searchAnime, { loading, error, data }] = useLazyQuery(ADVANCED_SEARCH);
 
   const handleSearch = () => {
-    if (searchTerm.trim()) {
-      setShouldFetch(true);
-    }
+    console.log('Parámetros enviados:', {
+      nombre,
+      tipo,
+      estado,
+      min_score: minScore,
+      genero: generos.join(','),
+    });
+
+    searchAnime({
+      variables: {
+        nombre,
+        tipo,
+        estado,
+        min_score: minScore,
+        genero: generos.join(','),
+      },
+    });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -25,56 +46,93 @@ const HomeScreen = () => {
     }
   };
 
+  const toggleGenero = (genero: string) => {
+    setGeneros((prev) =>
+      prev.includes(genero) ? prev.filter((g) => g !== genero) : [...prev, genero]
+    );
+  };
+
   return (
     <div style={HomeStyles.container}>
-      <h1 style={HomeStyles.title}>Lista de Animes</h1>
-      
+      <h1 style={HomeStyles.title}>Búsqueda Avanzada de Animes</h1>
+
       <div style={HomeStyles.searchContainer}>
         <input
           type="text"
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-            setShouldFetch(false);
-          }}
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
           onKeyPress={handleKeyPress}
-          placeholder="Buscar anime por título..."
+          placeholder="Buscar por nombre..."
           style={HomeStyles.input}
         />
-        <button 
-          onClick={handleSearch}
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-          style={{
-            ...HomeStyles.button,
-            ...(isHovered ? HomeStyles.buttonHover : {})
-          }}
+        <select
+          value={tipo}
+          onChange={(e) => setTipo(e.target.value)}
+          style={HomeStyles.select}
         >
+          <option value="">Tipo</option>
+          <option value="TV">TV</option>
+          <option value="Movie">Película</option>
+          <option value="OVA">OVA</option>
+        </select>
+        <select
+          value={estado}
+          onChange={(e) => setEstado(e.target.value)}
+          style={HomeStyles.select}
+        >
+          <option value="">Estado</option>
+          <option value="airing">En emisión</option>
+          <option value="completed">Finalizado</option>
+          <option value="upcoming">Próximamente</option>
+        </select>
+        <input
+          type="number"
+          value={minScore || ''}
+          onChange={(e) => setMinScore(parseFloat(e.target.value))}
+          placeholder="Puntuación mínima"
+          style={HomeStyles.input}
+        />
+        <div style={HomeStyles.genreContainer}>
+          {(['1', '2', '3', '4', '5'] as Array<keyof typeof genreMap>).map((genero) => (
+            <label key={genero} style={HomeStyles.genreLabel}>
+              <input
+                type="checkbox"
+                value={genero}
+                checked={generos.includes(genero)}
+                onChange={() => toggleGenero(genero)}
+              />
+              {genreMap[genero]}
+            </label>
+          ))}
+        </div>
+        <button onClick={handleSearch} style={HomeStyles.button}>
           Buscar
         </button>
       </div>
 
-      {loading && <p style={HomeStyles.loadingText}>Cargando animes...</p>}
+      {loading && <p style={HomeStyles.loadingText}>Cargando resultados...</p>}
       {error && <p style={HomeStyles.errorText}>Error: {error.message}</p>}
 
-      {data && data.animes ? (
+      {data && data.busqueda_avanzada ? (
         <ul style={HomeStyles.animeList}>
-          {data.animes.map((anime: any) => (
-            <li 
-              key={anime.id} 
-              style={HomeStyles.animeCard}
-            >
+          {data.busqueda_avanzada.map((anime: any) => (
+            <li key={anime.mal_id} style={HomeStyles.animeCard}>
+              <img
+                src={anime.image_url}
+                alt={anime.title}
+                style={HomeStyles.animeImage}
+              />
               <h3 style={HomeStyles.animeTitle}>{anime.title}</h3>
               <p style={HomeStyles.animeDescription}>
-                {anime.description || 'Descripción no disponible'}
+                {anime.synopsis || 'Sin descripción'}
               </p>
             </li>
           ))}
         </ul>
       ) : (
-        !loading && !error && !shouldFetch && (
+        !loading && !error && (
           <p style={HomeStyles.promptText}>
-            Ingresa un término de búsqueda y haz clic en "Buscar" para encontrar animes
+            Ingresa filtros y haz clic en "Buscar" para encontrar animes.
           </p>
         )
       )}
