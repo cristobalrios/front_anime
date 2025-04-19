@@ -5,14 +5,14 @@ export const ADVANCED_SEARCH = gql`
     $nombre: String
     $tipo: String
     $estado: String
-    $min_score: Float
+    $minScore: Float
     $genero: String
   ) {
     busquedaAvanzada(
       nombre: $nombre
       tipo: $tipo
       estado: $estado
-      min_score: $min_score
+      minScore: $minScore
       genero: $genero
     ) {
       malId

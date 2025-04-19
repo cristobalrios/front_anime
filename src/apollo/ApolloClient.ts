@@ -15,6 +15,7 @@ const authLink = setContext((_, { headers }) => {
     headers: {
       ...headers,
       Authorization: token ? `Bearer ${token}` : '',
+      'Content-Type': 'application/json', // Asegúrate de incluir este encabezado
     },
   };
 });

@@ -2,8 +2,9 @@ import { CSSProperties } from 'react';
 
 const HomeStyles: { [key: string]: React.CSSProperties } = {
   container: {
-    height: '100vh',
     display: 'flex',
+        backgroundAttachment: 'fixed',
+    minHeight: '100vh',
     flexDirection: 'column',  // Asegura que todo se organice de forma vertical
     justifyContent: 'center',
     alignItems: 'center',
